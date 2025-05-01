@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.joda.time.DateTime;
+import org.killbill.billing.account.api.Account;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
@@ -603,9 +604,31 @@ public class AdyenPaymentPluginApi
         if (notificationItem.getAdditionalData().get(RECURRING_DATA) != null) {
 
           this.adyenDao.updateRecurringDetailsPaymentMethod(
-              payment.getPaymentMethodId(),
-              UUID.fromString(record.getKbTenantId()),
-              notificationItem.getAdditionalData().get(RECURRING_DATA));
+                  payment.getPaymentMethodId(),
+                  UUID.fromString(record.getKbTenantId()),
+                  notificationItem.getAdditionalData().get(RECURRING_DATA));
+        }
+
+        logger.info("Crowder was here");
+        try {
+          final Account kbAccount = this.killbillAPI
+                  .getAccountUserApi()
+                  .getAccountById(UUID.fromString(record.getKbAccountId()), tempContext);
+
+          this.killbillAPI
+                  .getPaymentApi()
+                  .notifyPendingTransactionOfStateChanged(
+                          kbAccount,
+                          UUID.fromString(record.getKbPaymentTransactionId()),
+                          notificationItem.isSuccess(),
+                          tempContext);
+
+          final List<org.killbill.billing.payment.api.PaymentMethod> paymentMethods = this.killbillAPI
+                  .getPaymentApi()
+                  .getAccountPaymentMethods(UUID.fromString(record.getKbAccountId()), false, true, null, tempContext);
+
+        } catch (Exception e) {
+          logger.error("Crowder {}", e.getMessage(), e);
         }
 
       } else {
