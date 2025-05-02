@@ -46,7 +46,7 @@ public class AdyenHealthcheck implements Healthcheck {
 
       return HealthStatus.healthy("Adyen OK");
     } catch (final Exception e) {
-      logger.warn("Healthcheck error", e);
+      logger.warn("[Adyen] Healthcheck error", e);
       return HealthStatus.unHealthy("Adyen error: " + e.getMessage());
     }
   }

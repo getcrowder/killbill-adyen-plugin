@@ -24,6 +24,7 @@ import com.adyen.model.checkout.CheckoutPaymentMethod;
 import com.adyen.model.checkout.CreateCheckoutSessionRequest;
 import com.adyen.model.checkout.CreateCheckoutSessionRequest.RecurringProcessingModelEnum;
 import com.adyen.model.checkout.CreateCheckoutSessionRequest.ShopperInteractionEnum;
+import com.adyen.model.checkout.CreateCheckoutSessionRequest.StorePaymentMethodModeEnum;
 import com.adyen.model.checkout.CreateCheckoutSessionResponse;
 
 import com.adyen.model.checkout.PaymentRefundRequest;
@@ -85,7 +86,10 @@ public class AdyenSDKClientImpl implements AdyenSDKClient {
         if (isRecurrent) {
             checkoutSession.setRecurringProcessingModel(RecurringProcessingModelEnum.CARDONFILE);
             checkoutSession.shopperInteraction(ShopperInteractionEnum.ECOMMERCE);
+//          checkoutSession.setEnableOneClick(true);
+//          checkoutSession.setEnableRecurring(true);
             checkoutSession.storePaymentMethod(true);
+            checkoutSession.storePaymentMethodMode(StorePaymentMethodModeEnum.ENABLED);
         }
 
         return paymentsApi.sessions(checkoutSession);
@@ -132,14 +136,14 @@ public class AdyenSDKClientImpl implements AdyenSDKClient {
         paymentsRequest.setReturnUrl(adyenConfigProperties.getReturnUrl());
         paymentsRequest.setMerchantAccount(adyenConfigProperties.getMerchantAccount());
         paymentsRequest.setShopperInteraction(PaymentRequest.ShopperInteractionEnum.CONTAUTH);
-        paymentsRequest.setRecurringProcessingModel(PaymentRequest.RecurringProcessingModelEnum.CARDONFILE);
+        paymentsRequest.setRecurringProcessingModel(PaymentRequest.RecurringProcessingModelEnum.UNSCHEDULEDCARDONFILE);
         // antes
         // paymentsRequest.addOneClickData(recurringDetailReference, null);
         // despues
         StoredPaymentMethodDetails storedPaymentMethodDetails = new StoredPaymentMethodDetails();
-        //storedPaymentMethodDetails.setType(TypeEnum.BCMC_MOBILE);
+        // storedPaymentMethodDetails.setType(TypeEnum.BCMC_MOBILE);
         storedPaymentMethodDetails.storedPaymentMethodId(recurringDetailReference);
-        storedPaymentMethodDetails.setRecurringDetailReference(recurringDetailReference);
+        // storedPaymentMethodDetails.setRecurringDetailReference(recurringDetailReference);
 
         paymentsRequest.setPaymentMethod(new CheckoutPaymentMethod(storedPaymentMethodDetails));
 

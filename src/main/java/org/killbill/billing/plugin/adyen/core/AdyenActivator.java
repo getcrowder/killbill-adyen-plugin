@@ -51,13 +51,13 @@ public class AdyenActivator extends KillbillActivatorBase {
   public void start(final BundleContext context) throws Exception {
     super.start(context);
 
-    logger.info(" starting plugin {}", PLUGIN_NAME);
+    logger.info("[Adyen] Starting plugin {}", PLUGIN_NAME);
     final AdyenDao adyenDao = new AdyenDao(dataSource.getDataSource());
 
     final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
 
     // Register an event listener for plugin configuration (optional)
-    logger.info("Registering an event listener for plugin configuration");
+    logger.info("[Adyen] Registering an event listener for plugin configuration");
     adyenConfigurationHandler = new AdyenConfigurationHandler(region, PLUGIN_NAME, killbillAPI);
     final AdyenConfigProperties globalConfiguration =
         adyenConfigurationHandler.createConfigurable(configProperties.getProperties());
@@ -65,14 +65,14 @@ public class AdyenActivator extends KillbillActivatorBase {
 
     // As an example, this plugin registers a PaymentPluginApi (this could be changed to any other
     // plugin api)
-    logger.info("Registering an APIs");
+    logger.info("[Adyen] Registering an APIs");
     final PaymentPluginApi paymentPluginApi =
         new AdyenPaymentPluginApi(
             adyenConfigurationHandler, killbillAPI, configProperties, clock.getClock(), adyenDao);
     registerPaymentPluginApi(context, paymentPluginApi);
 
     // Expose a healthcheck (optional), so other plugins can check on the plugin status
-    logger.info("Registering healthcheck");
+    logger.info("[Adyen] Registering healthcheck");
     final Healthcheck healthcheck = new AdyenHealthcheck();
     registerHealthcheck(context, healthcheck);
       

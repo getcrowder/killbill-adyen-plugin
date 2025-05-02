@@ -98,7 +98,7 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final TenantContext context)
       throws PaymentPluginApiException {
-    logger.info("[getPaymentInfo] getPaymentInfo for account {}", kbAccountId);
+    logger.info("[Adyen] [getPaymentInfo] getPaymentInfo for account {}", kbAccountId);
     final List<AdyenResponsesRecord> records;
 
     List<PaymentTransactionInfoPlugin> result = new ArrayList<>();
@@ -133,7 +133,7 @@ public class AdyenPaymentPluginApi
       }
 
     } catch (SQLException e) {
-      logger.error("Error trying to access de DB ", e);
+      logger.error("[Adyen] Error trying to access de DB ", e);
     }
 
     return result;
@@ -152,14 +152,14 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final TenantContext context)
       throws PaymentPluginApiException {
-    logger.info("[getPaymentMethodDetail] Getting Payment Method Detail");
+    logger.info("[Adyen] [getPaymentMethodDetail] Getting Payment Method Detail");
     AdyenPaymentMethodsRecord record;
     try {
       record = dao.getPaymentMethod(kbPaymentMethodId, context.getTenantId());
 
     } catch (final SQLException e) {
       logger.error(
-          "[getPaymentMethodDetail] Unable to retrieve payment method for kbPaymentMethodId {} {} ",
+          "[Adyen] [getPaymentMethodDetail] Unable to retrieve payment method for kbPaymentMethodId {} {} ",
           kbPaymentMethodId,
           e.getMessage());
       throw new PaymentPluginApiException(
@@ -196,7 +196,7 @@ public class AdyenPaymentPluginApi
       Iterable<PluginProperty> properties,
       CallContext context)
       throws PaymentPluginApiException {
-    logger.info("[addPaymentMethod] Adding Payment Method");
+    logger.info("[Adyen] [addPaymentMethod] Adding Payment Method");
     final Map<String, String> mergedProperties =
         PluginProperties.toStringMap(paymentMethodProps.getProperties(), properties);
     boolean recurring;
@@ -243,11 +243,11 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final CallContext context)
       throws PaymentPluginApiException {
-    logger.info("[deletePaymentMethod] Deleting Payment Method");
+    logger.info("[Adyen] [deletePaymentMethod] Deleting Payment Method");
     try {
       this.adyenDao.updateIsDeletePaymentMethod(kbPaymentMethodId, context.getTenantId());
     } catch (SQLException e) {
-      logger.error("{}", e.getMessage(), e);
+      logger.error("[Adyen] {}", e.getMessage(), e);
     }
     super.deletePaymentMethod(kbAccountId, kbPaymentMethodId, properties, context);
   }
@@ -259,7 +259,7 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final CallContext context)
       throws PaymentPluginApiException {
-    logger.info("[getPaymentMethods] Getting Payment Method");
+    logger.info("[Adyen] [getPaymentMethods] Getting Payment Method");
     /* Disabled and returning only the methods in db. Normally, we would synch gateway payment methods with db payment methods */
     return super.getPaymentMethods(kbAccountId, false, properties, context);
   }
@@ -303,13 +303,13 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final CallContext context)
       throws PaymentPluginApiException {
-    logger.info("Purchase Payment for account {}", kbAccountId);
+    logger.info("[Adyen] Purchase Payment for account {}", kbAccountId);
     final Map<String, String> mergedProperties = PluginProperties.toStringMap(properties);
     AdyenPaymentMethodsRecord paymentMethodRecord = null;
     try {
       paymentMethodRecord = this.adyenDao.getPaymentMethod(kbPaymentMethodId.toString());
     } catch (SQLException e1) {
-      logger.error("[purchasePayment]  encountered a database error ", e1);
+      logger.error("[Adyen] [purchasePayment]  encountered a database error ", e1);
       return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
           TransactionType.PURCHASE, "[purchasePayment]  encountered a database error ");
     }
@@ -355,7 +355,7 @@ public class AdyenPaymentPluginApi
               outputDTO,
               context.getTenantId());
     } catch (SQLException e) {
-      logger.error("[purchasePayment]  encountered a database error ", e);
+      logger.error("[Adyen] [purchasePayment]  encountered a database error ", e);
       return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
           TransactionType.PURCHASE, "[purchasePayment]  encountered a database error ");
     }
@@ -385,19 +385,19 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final CallContext context)
       throws PaymentPluginApiException {
-    logger.info("Refund Payment for account {}", kbAccountId);
+    logger.info("[Adyen] Refund Payment for account {}", kbAccountId);
     AdyenResponsesRecord adyenRecord = null;
 
     try {
       adyenRecord = this.adyenDao.getSuccessfulPurchaseResponse(kbPaymentId, context.getTenantId());
       if (adyenRecord == null) {
-        logger.error("[voidPayment] Purchase do not exists");
+        logger.error("[Adyen] [voidPayment] Purchase do not exists");
         return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
             TransactionType.VOID, "Purchase do not exists");
       }
 
     } catch (SQLException e) {
-      logger.error("[voidPayment]  but we encountered a database error", e);
+      logger.error("[Adyen] [voidPayment]  but we encountered a database error", e);
       return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
           TransactionType.VOID, "[voidPayment] but we encountered a database error");
     }
@@ -430,7 +430,7 @@ public class AdyenPaymentPluginApi
               outputDTO,
               context.getTenantId());
     } catch (SQLException e) {
-      logger.error("We encountered a database error ", e);
+      logger.error("[Adyen] We encountered a database error ", e);
     }
     return new AdyenPaymentTransactionInfoPlugin(
         adyenRecord,
@@ -474,7 +474,7 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final CallContext context)
       throws PaymentPluginApiException {
-    logger.info("Refund Payment for account {}", kbAccountId);
+    logger.info("[Adyen] Refund Payment for account {}", kbAccountId);
     AdyenResponsesRecord adyenRecord = null;
 
     try {
@@ -484,7 +484,7 @@ public class AdyenPaymentPluginApi
       }
 
     } catch (SQLException e) {
-      logger.error("[refundPayment]  but we encountered a database error", e);
+      logger.error("[Adyen] [refundPayment]  but we encountered a database error", e);
       return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
           TransactionType.REFUND, "[refundPayment] but we encountered a database error");
     }
@@ -517,7 +517,7 @@ public class AdyenPaymentPluginApi
               outputDTO,
               context.getTenantId());
     } catch (SQLException e) {
-      logger.error("We encountered a database error ", e);
+      logger.error("[Adyen] We encountered a database error ", e);
     }
     return new AdyenPaymentTransactionInfoPlugin(
         adyenRecord,
@@ -552,7 +552,7 @@ public class AdyenPaymentPluginApi
       final Iterable<PluginProperty> properties,
       final CallContext context)
       throws PaymentPluginApiException {
-    logger.info("Notification recieved");
+    logger.info("[Adyen] Notification recieved");
 
     try {
       HMACValidator hmacValidator = new HMACValidator();
@@ -608,35 +608,35 @@ public class AdyenPaymentPluginApi
                   payment.getPaymentMethodId(),
                   UUID.fromString(record.getKbTenantId()),
                   notificationItem.getAdditionalData().get(RECURRING_DATA));
+        } else {
+          logger.warn("[Adyen] missing {}", RECURRING_DATA);
         }
 
-        logger.info("Crowder was here");
+        logger.info("[Adyen] Crowder was here");
+        //{"authCode":"059103","cardHolderName":"Checkout Shopper PlaceHolder","cardSummary":"5454","checkoutSessionId":"CS917C1787EA622C42","shopperCountry":"UY","shopperIP":"167.62.124.208","tokenization.shopperReference":"c67b93b3-bf67-4f89-a430-85644436e4d5","hmacSignature":"2QRcCYenK7b+puF5q214EuCy/HaE1lAwqBxVLdrsrnY=","expiryDate":"03/2030","issuerCountry":"PL","cardBin":"545454","recurringProcessingModel":"CardOnFile","recurring.shopperReference":"c67b93b3-bf67-4f89-a430-85644436e4d5","fundingSource":"CREDIT","shopperReference":"c67b93b3-bf67-4f89-a430-85644436e4d5"}
         try {
           final Account kbAccount = this.killbillAPI
-                  .getAccountUserApi()
-                  .getAccountById(UUID.fromString(record.getKbAccountId()), tempContext);
+              .getAccountUserApi()
+              .getAccountById(UUID.fromString(record.getKbAccountId()), tempContext);
 
           this.killbillAPI
-                  .getPaymentApi()
-                  .notifyPendingTransactionOfStateChanged(
-                          kbAccount,
-                          UUID.fromString(record.getKbPaymentTransactionId()),
-                          notificationItem.isSuccess(),
-                          tempContext);
-
-          final List<org.killbill.billing.payment.api.PaymentMethod> paymentMethods = this.killbillAPI
-                  .getPaymentApi()
-                  .getAccountPaymentMethods(UUID.fromString(record.getKbAccountId()), false, true, null, tempContext);
+              .getPaymentApi()
+              .notifyPendingTransactionOfStateChanged(
+                  kbAccount,
+                  UUID.fromString(record.getKbPaymentTransactionId()),
+                  notificationItem.isSuccess(),
+                  tempContext);
 
         } catch (Exception e) {
-          logger.error("Crowder {}", e.getMessage(), e);
+          logger.error("[Adyen] Crowder: {}", e.getMessage());
+          e.printStackTrace();
         }
 
       } else {
-        logger.error("HMAC Key is not valid");
+        logger.error("[Adyen] HMAC Key is not valid");
       }
     } catch (Exception e) {
-      logger.error("{}", e.getMessage(), e);
+      logger.error("[Adyen] {}", e.getMessage(), e);
     }
     return new PluginGatewayNotification("[accepted]");
   }
@@ -649,7 +649,7 @@ public class AdyenPaymentPluginApi
       return objectMapper.readValue(additionalData, Map.class);
 
     } catch (Exception e) {
-      logger.error("", e);
+      logger.error("[Adyen]", e);
     }
     return Collections.emptyMap();
   }
@@ -668,18 +668,18 @@ public class AdyenPaymentPluginApi
   public PaymentTransactionInfoPlugin refundValidations(
       AdyenResponsesRecord adyenRecord, BigDecimal amount) {
     if (adyenRecord == null) {
-      logger.error("[refundPayment] Purchase do not exists");
+      logger.error("[Adyen] [refundPayment] Purchase do not exists");
       return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
           TransactionType.REFUND, "Purchase do not exists");
     }
 
     if (adyenRecord.getAmount().compareTo(amount) < 0) {
-      logger.error("[refundPayment] The refund amount is more than the transaction amount");
+      logger.error("[Adyen] [refundPayment] The refund amount is more than the transaction amount");
       return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
           TransactionType.REFUND, "The refund amount is more than the transaction amount");
     }
     if (BigDecimal.ZERO.compareTo(amount) == 0) {
-      logger.error("[refundPayment] The refund amount can not be zero");
+      logger.error("[Adyen] [refundPayment] The refund amount can not be zero");
       return AdyenPaymentTransactionInfoPlugin.cancelPaymentTransactionInfoPlugin(
           TransactionType.REFUND, "The refund amount can not be zero");
     } else {

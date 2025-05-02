@@ -60,11 +60,11 @@ public class AdyenProcessorImpl implements GatewayProcessor {
               input.getKbAccountId(),
               input.getRecurringData());
     } catch (IOException e) {
-      logger.error("IO Exception{}", e.getMessage(), e);
+      logger.error("[Adyen] IO Exception{}", e.getMessage(), e);
       e.printStackTrace();
     } catch (ApiException e) {
 
-      logger.error("API Exception {} \n {}", e.getError(), e.getMessage(), e);
+      logger.error("[Adyen] API Exception {} \n {}", e.getError(), e.getMessage(), e);
       e.printStackTrace();
     }
     ProcessorOutputDTO outputDTO = new ProcessorOutputDTO();
@@ -89,11 +89,11 @@ public class AdyenProcessorImpl implements GatewayProcessor {
               input.getKbAccountId(),
               recurring);
     } catch (IOException e) {
-      logger.error("IO Exception{}", e.getMessage(), e);
+      logger.error("[Adyen] IO Exception{}", e.getMessage(), e);
       e.printStackTrace();
     } catch (ApiException e) {
 
-      logger.error("API Exception {} \n {}", e.getError(), e.getMessage(), e);
+      logger.error("[Adyen] API Exception {} \n {}", e.getError(), e.getMessage(), e);
       e.printStackTrace();
     }
 
@@ -120,11 +120,11 @@ public class AdyenProcessorImpl implements GatewayProcessor {
               input.getKbTransactionId(),
               input.getPspReference());
     } catch (IOException e) {
-      logger.error("IO Exception{}", e.getMessage(), e);
+      logger.error("[Adyen] IO Exception{}", e.getMessage(), e);
       e.printStackTrace();
     } catch (ApiException e) {
 
-      logger.error("API Exception {} \n {}", e.getError(), e.getMessage(), e);
+      logger.error("[Adyen] API Exception {} \n {}", e.getError(), e.getMessage(), e);
       e.printStackTrace();
     }
 
@@ -170,11 +170,11 @@ public class AdyenProcessorImpl implements GatewayProcessor {
     try {
       response = httpClient.reversal(input.getKbTransactionId(), input.getPspReference());
     } catch (IOException e) {
-      logger.error("IO Exception{}", e.getMessage(), e);
+      logger.error("[Adyen] IO Exception{}", e.getMessage(), e);
       e.printStackTrace();
     } catch (ApiException e) {
 
-      logger.error("API Exception {} \n {}", e.getError(), e.getMessage(), e);
+      logger.error("[Adyen] API Exception {} \n {}", e.getError(), e.getMessage(), e);
       e.printStackTrace();
     }
 
@@ -189,7 +189,7 @@ public class AdyenProcessorImpl implements GatewayProcessor {
   @Override
   public SessionOutputDTO getSessionResult(final SessionInputDTO sessionInputDTO) {
     if (sessionInputDTO == null || sessionInputDTO.getSessionId() == null || sessionInputDTO.getSessionResult() == null) {
-      logger.error("Invalid session data provided: sessionInput is null or missing required fields");
+      logger.error("[Adyen] Invalid session data provided: sessionInput is null or missing required fields");
       return null;
     }
   
@@ -197,14 +197,14 @@ public class AdyenProcessorImpl implements GatewayProcessor {
     try {
       response = httpClient.getResultOfPaymentSession(sessionInputDTO);
       if (response == null) {
-        logger.warn("No response received from Adyen for session ID: {}", sessionInputDTO.getSessionId());
+        logger.warn("[Adyen] No response received from Adyen for session ID: {}", sessionInputDTO.getSessionId());
       }
     } catch (IOException e) {
-      logger.error("IO Exception processing session result: {}", e.getMessage(), e);
+      logger.error("[Adyen] IO Exception processing session result: {}", e.getMessage(), e);
     } catch (ApiException e) {
-      logger.error("API Exception processing session result: {} - {}", e.getError(), e.getMessage(), e);
+      logger.error("[Adyen] API Exception processing session result: {} - {}", e.getError(), e.getMessage(), e);
     } catch (Exception e) {
-      logger.error("Unexpected error processing session result: {}", e.getMessage(), e);
+      logger.error("[Adyen] Unexpected error processing session result: {}", e.getMessage(), e);
     }
     return response;
   }

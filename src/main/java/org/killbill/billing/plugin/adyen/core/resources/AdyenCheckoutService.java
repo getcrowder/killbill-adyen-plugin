@@ -68,7 +68,7 @@ public class AdyenCheckoutService {
       kbAccount = killbillAPI.getAccountUserApi().getAccountById(kbAccountId, context);
 
     } catch (AccountApiException e) {
-      logger.error("Account Api {}", e.getMessage(), e);
+      logger.error("[Adyen] Account Api {}", e.getMessage(), e);
       throw new PaymentPluginApiException(INTERNAL, e.getMessage());
     }
     List<PluginProperty> prop = new ArrayList<>();
@@ -91,7 +91,7 @@ public class AdyenCheckoutService {
                   context);
 
     } catch (PaymentApiException e) {
-      logger.error("Payment Api {}", e.getMessage(), e);
+      logger.error("[Adyen] Payment Api {}", e.getMessage(), e);
       throw new PaymentPluginApiException(INTERNAL, e.getMessage());
     }
     PaymentTransactionInfoPlugin paymentInfo =

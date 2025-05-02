@@ -22,6 +22,7 @@ import java.util.UUID;
 import javax.inject.Singleton;
 import org.jooby.Result;
 import org.jooby.Results;
+import org.jooby.Status;
 import org.jooby.mvc.Body;
 import org.jooby.mvc.POST;
 import org.jooby.mvc.Path;
@@ -50,16 +51,24 @@ public class AdyenNotificationServlet extends PluginHealthcheck {
   }
 
   @POST
-  public Result notificate(@Body String body) throws PaymentPluginApiException {
-    logger.info("start notificate");
-    final CallContext context =
-        new PluginCallContext(
-            AdyenActivator.PLUGIN_NAME,
-            clock.getClock().getUTCNow(),
-            UUID.randomUUID(),
-            UUID.randomUUID());
-    logger.info("start result of notificate");
+  public Result notification(@Body String body) {
+    logger.info("[Adyen] Start notification");
+    try {
+      final CallContext context =
+          new PluginCallContext(
+              AdyenActivator.PLUGIN_NAME,
+              clock.getClock().getUTCNow(),
+              UUID.randomUUID(),
+              UUID.randomUUID());
+      logger.info("[Adyen] Start result of notification");
 
-    return Results.ok(adyenPaymentPluginApi.processNotification(body, null, context).getEntity());
+      return Results.ok(adyenPaymentPluginApi.processNotification(body, null, context).getEntity());
+    } catch (final PaymentPluginApiException e) {
+      logger.error("[Adyen] Error processing notification", e);
+      return Results.with(e, Status.SERVER_ERROR);
+    } catch (final Exception e) {
+      logger.error("[Adyen] Unexpected error processing notification", e);
+      return Results.with(e, Status.SERVER_ERROR);
+    }
   }
 }
