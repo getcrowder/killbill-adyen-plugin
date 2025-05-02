@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.UUID;
 import org.killbill.billing.plugin.adyen.api.ProcessorInputDTO;
 import org.killbill.billing.plugin.adyen.api.ProcessorOutputDTO;
+import org.killbill.billing.plugin.adyen.api.SessionInputDTO;
+import org.killbill.billing.plugin.adyen.api.SessionOutputDTO;
 import org.killbill.billing.plugin.adyen.core.AdyenConfigurationHandler;
 
 public interface GatewayProcessor {
@@ -37,4 +39,6 @@ public interface GatewayProcessor {
       Map<String, String> properties,
       UUID context,
       UUID kbAccountId);
+
+  public SessionOutputDTO getSessionResult(SessionInputDTO sessionInputDTO);
 }

@@ -28,6 +28,8 @@ import org.killbill.billing.plugin.adyen.core.resources.AdyenCheckoutService;
 import org.killbill.billing.plugin.adyen.core.resources.AdyenCheckoutServlet;
 import org.killbill.billing.plugin.adyen.core.resources.AdyenHealthcheckServlet;
 import org.killbill.billing.plugin.adyen.core.resources.AdyenNotificationServlet;
+import org.killbill.billing.plugin.adyen.core.resources.AdyenSessionService;
+import org.killbill.billing.plugin.adyen.core.resources.AdyenSessionServlet;
 import org.killbill.billing.plugin.adyen.dao.AdyenDao;
 import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
 import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
@@ -73,19 +75,27 @@ public class AdyenActivator extends KillbillActivatorBase {
     logger.info("Registering healthcheck");
     final Healthcheck healthcheck = new AdyenHealthcheck();
     registerHealthcheck(context, healthcheck);
-    final AdyenCheckoutService checkoutService =
-        new AdyenCheckoutService(killbillAPI, adyenConfigurationHandler);
-    // Register a servlet (optional)
-    final PluginApp pluginApp =
-        new PluginAppBuilder(PLUGIN_NAME, killbillAPI, dataSource, super.clock, configProperties)
-            .withRouteClass(AdyenHealthcheckServlet.class)
-            .withRouteClass(AdyenNotificationServlet.class)
-            .withRouteClass(AdyenCheckoutServlet.class)
-            .withService(healthcheck)
-            .withService(clock)
-            .withService(checkoutService)
-            .withService(paymentPluginApi)
-            .build();
+      
+      // Register services
+      final AdyenCheckoutService checkoutService =
+          new AdyenCheckoutService(killbillAPI, adyenConfigurationHandler);
+      
+      final AdyenSessionService sessionService =
+          new AdyenSessionService(killbillAPI, adyenConfigurationHandler);
+          
+      // Register a servlet (optional)
+      final PluginApp pluginApp =
+          new PluginAppBuilder(PLUGIN_NAME, killbillAPI, dataSource, super.clock, configProperties)
+              .withRouteClass(AdyenHealthcheckServlet.class)
+              .withRouteClass(AdyenNotificationServlet.class)
+              .withRouteClass(AdyenCheckoutServlet.class)
+              .withRouteClass(AdyenSessionServlet.class)
+              .withService(healthcheck)
+              .withService(clock)
+              .withService(checkoutService)
+              .withService(sessionService)
+              .withService(paymentPluginApi)
+              .build();
     final HttpServlet httpServlet = PluginApp.createServlet(pluginApp);
 
     registerServlet(context, httpServlet);

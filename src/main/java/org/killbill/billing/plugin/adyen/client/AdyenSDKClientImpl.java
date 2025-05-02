@@ -14,126 +14,159 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.killbill.billing.plugin.adyen.client;
 
 import com.adyen.Client;
 import com.adyen.enums.Environment;
-import com.adyen.model.Amount;
+import com.adyen.model.checkout.Amount;
+import com.adyen.model.checkout.CheckoutPaymentMethod;
 import com.adyen.model.checkout.CreateCheckoutSessionRequest;
 import com.adyen.model.checkout.CreateCheckoutSessionRequest.RecurringProcessingModelEnum;
 import com.adyen.model.checkout.CreateCheckoutSessionRequest.ShopperInteractionEnum;
 import com.adyen.model.checkout.CreateCheckoutSessionResponse;
-import com.adyen.model.checkout.CreatePaymentRefundRequest;
-import com.adyen.model.checkout.CreatePaymentReversalRequest;
-import com.adyen.model.checkout.PaymentRefundResource;
-import com.adyen.model.checkout.PaymentReversalResource;
-import com.adyen.model.checkout.PaymentsRequest;
-import com.adyen.model.checkout.PaymentsResponse;
-import com.adyen.service.Checkout;
+
+import com.adyen.model.checkout.PaymentRefundRequest;
+import com.adyen.model.checkout.PaymentRefundResponse;
+import com.adyen.model.checkout.PaymentRequest;
+import com.adyen.model.checkout.PaymentResponse;
+import com.adyen.model.checkout.PaymentReversalRequest;
+import com.adyen.model.checkout.PaymentReversalResponse;
+import com.adyen.model.checkout.SessionResultResponse;
+import com.adyen.model.checkout.StoredPaymentMethodDetails;
+import com.adyen.service.checkout.ModificationsApi;
+import com.adyen.service.checkout.PaymentsApi;
 import com.adyen.service.exception.ApiException;
+
 import java.io.IOException;
 import java.math.BigDecimal;
+
 import org.killbill.billing.catalog.api.Currency;
+import org.killbill.billing.plugin.adyen.api.SessionInputDTO;
+import org.killbill.billing.plugin.adyen.api.SessionOutputDTO;
 import org.killbill.billing.plugin.adyen.core.AdyenConfigProperties;
 
 public class AdyenSDKClientImpl implements AdyenSDKClient {
 
-  private final AdyenConfigProperties adyenConfigProperties;
-  private final Checkout checkout;
+    private final AdyenConfigProperties adyenConfigProperties;
+    private final PaymentsApi paymentsApi;
+    private final ModificationsApi modificationsApi;
 
-  public AdyenSDKClientImpl(AdyenConfigProperties adyenConfigProperties) {
-    this.adyenConfigProperties = adyenConfigProperties;
-    Client client =
-        new Client(
-            adyenConfigProperties.getApiKey(),
-            Environment.valueOf(adyenConfigProperties.getEnviroment()));
-    this.checkout = new Checkout(client);
-  }
-
-  @Override
-  public CreateCheckoutSessionResponse checkoutsessions(
-      Currency currency,
-      BigDecimal kbAmount,
-      String kbTransactionId,
-      String kbAccountId,
-      boolean isRecurrent)
-      throws IOException, ApiException {
-
-    Amount amount = new Amount().currency(currency.name()).value(convertToMinorUnit(kbAmount));
-    CreateCheckoutSessionRequest checkoutSession = new CreateCheckoutSessionRequest();
-    checkoutSession.merchantAccount(adyenConfigProperties.getMerchantAccount());
-    checkoutSession.setChannel(CreateCheckoutSessionRequest.ChannelEnum.WEB);
-    checkoutSession.setReference(kbTransactionId);
-    checkoutSession.setReturnUrl(adyenConfigProperties.getReturnUrl());
-    checkoutSession.setAmount(amount);
-    checkoutSession.setCountryCode(adyenConfigProperties.getRegion());
-    checkoutSession.setCaptureDelayHours(
-        Integer.valueOf(adyenConfigProperties.getCaptureDelayHours()));
-    checkoutSession.setShopperReference(kbAccountId);
-    if (isRecurrent) {
-      checkoutSession.setRecurringProcessingModel(RecurringProcessingModelEnum.CARDONFILE);
-      checkoutSession.shopperInteraction(ShopperInteractionEnum.ECOMMERCE);
-      checkoutSession.storePaymentMethod(true);
+    public AdyenSDKClientImpl(AdyenConfigProperties adyenConfigProperties) {
+        this.adyenConfigProperties = adyenConfigProperties;
+        final Client client =
+                new Client(
+                        adyenConfigProperties.getApiKey(),
+                        Environment.valueOf(adyenConfigProperties.getEnviroment()));
+        this.paymentsApi = new PaymentsApi(client);
+        this.modificationsApi = new ModificationsApi(client);
     }
 
-    return checkout.sessions(checkoutSession);
-  }
+    @Override
+    public CreateCheckoutSessionResponse checkoutsessions(
+            Currency currency,
+            BigDecimal kbAmount,
+            String kbTransactionId,
+            String kbAccountId,
+            boolean isRecurrent)
+            throws IOException, ApiException {
 
-  @Override
-  public PaymentReversalResource reversal(String transactionId, String paymentPspReference)
-      throws IOException, ApiException {
+        Amount amount = new Amount().currency(currency.name()).value(convertToMinorUnit(kbAmount));
+        CreateCheckoutSessionRequest checkoutSession = new CreateCheckoutSessionRequest();
+        checkoutSession.merchantAccount(adyenConfigProperties.getMerchantAccount());
+        checkoutSession.setChannel(CreateCheckoutSessionRequest.ChannelEnum.WEB);
+        checkoutSession.setReference(kbTransactionId);
+        checkoutSession.setReturnUrl(adyenConfigProperties.getReturnUrl());
+        checkoutSession.setAmount(amount);
+        checkoutSession.setCountryCode(adyenConfigProperties.getRegion());
+        checkoutSession.setCaptureDelayHours(
+                Integer.valueOf(adyenConfigProperties.getCaptureDelayHours()));
+        checkoutSession.setShopperReference(kbAccountId);
+        if (isRecurrent) {
+            checkoutSession.setRecurringProcessingModel(RecurringProcessingModelEnum.CARDONFILE);
+            checkoutSession.shopperInteraction(ShopperInteractionEnum.ECOMMERCE);
+            checkoutSession.storePaymentMethod(true);
+        }
 
-    CreatePaymentReversalRequest paymentReversalRequest = new CreatePaymentReversalRequest();
+        return paymentsApi.sessions(checkoutSession);
+    }
 
-    paymentReversalRequest.setMerchantAccount(adyenConfigProperties.getMerchantAccount());
-    paymentReversalRequest.setReference(transactionId);
+    @Override
+    public PaymentReversalResponse reversal(String transactionId, String paymentPspReference)
+            throws IOException, ApiException {
 
-    return checkout.paymentsReversals(paymentPspReference, paymentReversalRequest);
-  }
+        PaymentReversalRequest paymentReversalRequest = new PaymentReversalRequest();
 
-  public PaymentRefundResource refund(
-      Currency currency, BigDecimal kbAmount, String transactionId, String paymentPspReference)
-      throws IOException, ApiException {
+        paymentReversalRequest.setMerchantAccount(adyenConfigProperties.getMerchantAccount());
+        paymentReversalRequest.setReference(transactionId);
 
-    CreatePaymentRefundRequest paymentRefundRequest = new CreatePaymentRefundRequest();
-    Amount amount = new Amount().currency(currency.name()).value(convertToMinorUnit(kbAmount));
-    paymentRefundRequest.setAmount(amount);
-    paymentRefundRequest.setMerchantAccount(adyenConfigProperties.getMerchantAccount());
-    paymentRefundRequest.setReference(transactionId);
-    return checkout.paymentsRefunds(paymentPspReference, paymentRefundRequest);
-  }
+        return modificationsApi.refundOrCancelPayment(paymentPspReference, paymentReversalRequest);
+    }
 
-  @Override
-  public PaymentsResponse purchase(
-      Currency currency,
-      BigDecimal kbAmount,
-      String transactionId,
-      String kbAccountId,
-      String recurringDetailReference)
-      throws IOException, ApiException {
-    PaymentsRequest paymentsRequest = new PaymentsRequest();
-    Amount amount = new Amount().currency(currency.name()).value(convertToMinorUnit(kbAmount));
-    paymentsRequest.setAmount(amount);
-    paymentsRequest.setReference(transactionId);
+    public PaymentRefundResponse refund(
+            Currency currency, BigDecimal kbAmount, String transactionId, String paymentPspReference)
+            throws IOException, ApiException {
 
-    paymentsRequest.setShopperReference(kbAccountId);
-    paymentsRequest.setReturnUrl(adyenConfigProperties.getReturnUrl());
-    paymentsRequest.setMerchantAccount(adyenConfigProperties.getMerchantAccount());
-    paymentsRequest.setShopperInteraction(PaymentsRequest.ShopperInteractionEnum.CONTAUTH);
-    paymentsRequest.setRecurringProcessingModel(
-        PaymentsRequest.RecurringProcessingModelEnum.CARD_ON_FILE);
-    paymentsRequest.addOneClickData(recurringDetailReference, null);
+        PaymentRefundRequest paymentRefundRequest = new PaymentRefundRequest();
+        Amount amount = new Amount().currency(currency.name()).value(convertToMinorUnit(kbAmount));
+        paymentRefundRequest.setAmount(amount);
+        paymentRefundRequest.setMerchantAccount(adyenConfigProperties.getMerchantAccount());
+        paymentRefundRequest.setReference(transactionId);
+        return modificationsApi.refundCapturedPayment(paymentPspReference, paymentRefundRequest);
+    }
 
-    paymentsRequest.setCaptureDelayHours(
-        Integer.valueOf(adyenConfigProperties.getCaptureDelayHours()));
+    @Override
+    public PaymentResponse purchase(
+            Currency currency,
+            BigDecimal kbAmount,
+            String transactionId,
+            String kbAccountId,
+            String recurringDetailReference)
+            throws IOException, ApiException {
+        PaymentRequest paymentsRequest = new PaymentRequest();
+        Amount amount = new Amount().currency(currency.name()).value(convertToMinorUnit(kbAmount));
+        paymentsRequest.setAmount(amount);
+        paymentsRequest.setReference(transactionId);
 
-    return checkout.payments(paymentsRequest);
-  }
+        paymentsRequest.setShopperReference(kbAccountId);
+        paymentsRequest.setReturnUrl(adyenConfigProperties.getReturnUrl());
+        paymentsRequest.setMerchantAccount(adyenConfigProperties.getMerchantAccount());
+        paymentsRequest.setShopperInteraction(PaymentRequest.ShopperInteractionEnum.CONTAUTH);
+        paymentsRequest.setRecurringProcessingModel(PaymentRequest.RecurringProcessingModelEnum.CARDONFILE);
+        // antes
+        // paymentsRequest.addOneClickData(recurringDetailReference, null);
+        // despues
+        StoredPaymentMethodDetails storedPaymentMethodDetails = new StoredPaymentMethodDetails();
+        //storedPaymentMethodDetails.setType(TypeEnum.BCMC_MOBILE);
+        storedPaymentMethodDetails.storedPaymentMethodId(recurringDetailReference);
+        storedPaymentMethodDetails.setRecurringDetailReference(recurringDetailReference);
 
-  private Long convertToMinorUnit(BigDecimal amount) {
+        paymentsRequest.setPaymentMethod(new CheckoutPaymentMethod(storedPaymentMethodDetails));
 
-    String minorUnit = amount.toString().replace(".", "");
+        paymentsRequest.setCaptureDelayHours(
+                Integer.valueOf(adyenConfigProperties.getCaptureDelayHours()));
 
-    return Long.valueOf(minorUnit);
-  }
+        return paymentsApi.payments(paymentsRequest);
+    }
+
+    @Override
+    public SessionOutputDTO getResultOfPaymentSession(final SessionInputDTO sessionInputDTO)
+            throws IOException, ApiException {
+
+        final SessionResultResponse resultOfPaymentSession = paymentsApi
+                .getResultOfPaymentSession(sessionInputDTO.getSessionId(), sessionInputDTO.getSessionResult());
+
+        final SessionOutputDTO sessionOutputDTO = new SessionOutputDTO();
+        sessionOutputDTO.setSessionId(resultOfPaymentSession.getId());
+        sessionOutputDTO.setSessionStatus(resultOfPaymentSession.getStatus().toString());
+        return sessionOutputDTO;
+    }
+
+    private Long convertToMinorUnit(BigDecimal amount) {
+
+        String minorUnit = amount.toString().replace(".", "");
+
+        return Long.valueOf(minorUnit);
+    }
+
 }

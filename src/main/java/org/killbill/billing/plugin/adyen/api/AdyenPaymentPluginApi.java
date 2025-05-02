@@ -20,10 +20,11 @@ import static org.killbill.billing.plugin.adyen.core.resources.AdyenCheckoutServ
 
 import com.adyen.model.notification.NotificationRequest;
 import com.adyen.model.notification.NotificationRequestItem;
-import com.adyen.notification.NotificationHandler;
+import com.adyen.notification.WebhookHandler;
 import com.adyen.util.HMACValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -555,7 +556,7 @@ public class AdyenPaymentPluginApi
 
     try {
       HMACValidator hmacValidator = new HMACValidator();
-      NotificationHandler notificationHandler = new NotificationHandler();
+      WebhookHandler notificationHandler = new WebhookHandler();
       NotificationRequest notificationRequest =
           notificationHandler.handleNotificationJson(notification);
 

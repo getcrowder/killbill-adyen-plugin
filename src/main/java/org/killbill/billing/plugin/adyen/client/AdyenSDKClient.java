@@ -14,39 +14,48 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.killbill.billing.plugin.adyen.client;
 
 import com.adyen.model.checkout.CreateCheckoutSessionResponse;
-import com.adyen.model.checkout.PaymentRefundResource;
-import com.adyen.model.checkout.PaymentReversalResource;
-import com.adyen.model.checkout.PaymentsResponse;
+import com.adyen.model.checkout.PaymentRefundResponse;
+import com.adyen.model.checkout.PaymentResponse;
+import com.adyen.model.checkout.PaymentReversalResponse;
+import com.adyen.model.checkout.SessionResultResponse;
 import com.adyen.service.exception.ApiException;
+
 import java.io.IOException;
 import java.math.BigDecimal;
+
 import org.killbill.billing.catalog.api.Currency;
+import org.killbill.billing.plugin.adyen.api.SessionInputDTO;
+import org.killbill.billing.plugin.adyen.api.SessionOutputDTO;
 
 public interface AdyenSDKClient {
 
-  public CreateCheckoutSessionResponse checkoutsessions(
-      Currency currency,
-      BigDecimal kbAmount,
-      String transactionId,
-      String kbAccountId,
-      boolean isRecurring)
-      throws IOException, ApiException;
+    public CreateCheckoutSessionResponse checkoutsessions(
+            Currency currency,
+            BigDecimal kbAmount,
+            String transactionId,
+            String kbAccountId,
+            boolean isRecurring)
+            throws IOException, ApiException;
 
-  public PaymentReversalResource reversal(String transactionId, String paymentPspReference)
-      throws IOException, ApiException;
+    public PaymentReversalResponse reversal(String transactionId, String paymentPspReference)
+            throws IOException, ApiException;
 
-  public PaymentRefundResource refund(
-      Currency currency, BigDecimal kbAmount, String transactionId, String paymentPspReference)
-      throws IOException, ApiException;
+    public PaymentRefundResponse refund(
+            Currency currency, BigDecimal kbAmount, String transactionId, String paymentPspReference)
+            throws IOException, ApiException;
 
-  public PaymentsResponse purchase(
-      Currency currency,
-      BigDecimal kbAmount,
-      String transactionId,
-      String kbAccountId,
-      String recurringDetailReference)
-      throws IOException, ApiException;
+    public PaymentResponse purchase(
+            Currency currency,
+            BigDecimal kbAmount,
+            String transactionId,
+            String kbAccountId,
+            String recurringDetailReference)
+            throws IOException, ApiException;
+
+    public SessionOutputDTO getResultOfPaymentSession(SessionInputDTO sessionInputDTO)
+            throws IOException, ApiException;
 }

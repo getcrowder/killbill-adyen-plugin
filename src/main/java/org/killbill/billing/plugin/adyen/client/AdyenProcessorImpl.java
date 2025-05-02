@@ -17,9 +17,9 @@
 package org.killbill.billing.plugin.adyen.client;
 
 import com.adyen.model.checkout.CreateCheckoutSessionResponse;
-import com.adyen.model.checkout.PaymentRefundResource;
-import com.adyen.model.checkout.PaymentReversalResource;
-import com.adyen.model.checkout.PaymentsResponse;
+import com.adyen.model.checkout.PaymentRefundResponse;
+import com.adyen.model.checkout.PaymentResponse;
+import com.adyen.model.checkout.PaymentReversalResponse;
 import com.adyen.service.exception.ApiException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,6 +28,8 @@ import java.util.UUID;
 import org.joda.time.LocalDate;
 import org.killbill.billing.plugin.adyen.api.ProcessorInputDTO;
 import org.killbill.billing.plugin.adyen.api.ProcessorOutputDTO;
+import org.killbill.billing.plugin.adyen.api.SessionInputDTO;
+import org.killbill.billing.plugin.adyen.api.SessionOutputDTO;
 import org.killbill.billing.plugin.adyen.core.AdyenConfigurationHandler;
 import org.killbill.billing.plugin.api.PluginTenantContext;
 import org.killbill.billing.util.callcontext.TenantContext;
@@ -48,7 +50,7 @@ public class AdyenProcessorImpl implements GatewayProcessor {
 
   @Override
   public ProcessorOutputDTO processOneTimePayment(ProcessorInputDTO input) {
-    PaymentsResponse response = null;
+    PaymentResponse response = null;
     try {
       response =
           httpClient.purchase(
@@ -109,7 +111,7 @@ public class AdyenProcessorImpl implements GatewayProcessor {
 
   @Override
   public ProcessorOutputDTO refundPayment(ProcessorInputDTO input) {
-    PaymentRefundResource response = null;
+    PaymentRefundResponse response = null;
     try {
       response =
           httpClient.refund(
@@ -164,7 +166,7 @@ public class AdyenProcessorImpl implements GatewayProcessor {
 
   @Override
   public ProcessorOutputDTO voidPayment(ProcessorInputDTO input) {
-    PaymentReversalResource response = null;
+    PaymentReversalResponse response = null;
     try {
       response = httpClient.reversal(input.getKbTransactionId(), input.getPspReference());
     } catch (IOException e) {
@@ -182,5 +184,28 @@ public class AdyenProcessorImpl implements GatewayProcessor {
     }
 
     return outputDTO;
+  }
+
+  @Override
+  public SessionOutputDTO getSessionResult(final SessionInputDTO sessionInputDTO) {
+    if (sessionInputDTO == null || sessionInputDTO.getSessionId() == null || sessionInputDTO.getSessionResult() == null) {
+      logger.error("Invalid session data provided: sessionInput is null or missing required fields");
+      return null;
+    }
+  
+    SessionOutputDTO response = null;
+    try {
+      response = httpClient.getResultOfPaymentSession(sessionInputDTO);
+      if (response == null) {
+        logger.warn("No response received from Adyen for session ID: {}", sessionInputDTO.getSessionId());
+      }
+    } catch (IOException e) {
+      logger.error("IO Exception processing session result: {}", e.getMessage(), e);
+    } catch (ApiException e) {
+      logger.error("API Exception processing session result: {} - {}", e.getError(), e.getMessage(), e);
+    } catch (Exception e) {
+      logger.error("Unexpected error processing session result: {}", e.getMessage(), e);
+    }
+    return response;
   }
 }
